@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/layouts/MainLayout";
 import ProductCard, { ProductCardProps } from "@/components/ProductCard";
+import { Badge } from "@/components/ui/badge"; // Add this import
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
