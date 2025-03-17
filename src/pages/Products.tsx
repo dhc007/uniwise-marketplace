@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/layouts/MainLayout";
 import ProductCard, { ProductCardProps } from "@/components/ProductCard";
-import { Badge } from "@/components/ui/badge"; // Add this import
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,14 @@ import {
   Search,
   Tag,
   SlidersHorizontal,
-  X
+  X,
+  BookOpen
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "@/hooks/use-toast";
 
-// Sample products data
-const allProducts: ProductCardProps[] = [
+// Sample products data - acts as fallback if no localStorage products
+const initialProducts: ProductCardProps[] = [
   {
     id: "1",
     title: "Engineering Graphics Drafting Kit",
@@ -38,6 +40,7 @@ const allProducts: ProductCardProps[] = [
     category: "Drafting Tools",
     condition: "Like New",
     seller: "Rahul M.",
+    subject: "Engineering Graphics",
     rating: 4.8,
     postedDate: "3 days ago",
     isBlockchainVerified: true
@@ -51,6 +54,7 @@ const allProducts: ProductCardProps[] = [
     category: "Lab Coats",
     condition: "Good",
     seller: "Priya S.",
+    subject: "Chemistry",
     rating: 4.5,
     postedDate: "1 week ago"
   },
@@ -63,6 +67,7 @@ const allProducts: ProductCardProps[] = [
     category: "Textbooks",
     condition: "Good",
     seller: "Aditya K.",
+    subject: "Mathematics",
     rating: 4.2,
     postedDate: "2 days ago",
     isBlockchainVerified: true
@@ -76,6 +81,7 @@ const allProducts: ProductCardProps[] = [
     category: "Tools",
     condition: "Very Good",
     seller: "Vikram P.",
+    subject: "Workshop",
     rating: 4.7,
     postedDate: "5 days ago"
   },
@@ -88,6 +94,7 @@ const allProducts: ProductCardProps[] = [
     category: "Textbooks",
     condition: "Good",
     seller: "Sneha R.",
+    subject: "Physics",
     rating: 4.0,
     postedDate: "2 weeks ago"
   },
@@ -100,6 +107,7 @@ const allProducts: ProductCardProps[] = [
     category: "Electronics",
     condition: "Like New",
     seller: "Arjun T.",
+    subject: "Mathematics",
     rating: 4.9,
     postedDate: "4 days ago",
     isBlockchainVerified: true
@@ -113,6 +121,7 @@ const allProducts: ProductCardProps[] = [
     category: "Lab Coats",
     condition: "Good",
     seller: "Sanjay G.",
+    subject: "Workshop",
     rating: 4.3,
     postedDate: "1 week ago"
   },
@@ -125,6 +134,7 @@ const allProducts: ProductCardProps[] = [
     category: "Textbooks",
     condition: "Very Good",
     seller: "Amit D.",
+    subject: "Computer Science",
     rating: 4.6,
     postedDate: "3 days ago"
   }
@@ -139,6 +149,20 @@ const categories = [
   "Electronics",
   "Tools",
   "Lab Equipment"
+];
+
+// Subjects
+const subjects = [
+  "All Subjects",
+  "Engineering Graphics",
+  "Chemistry",
+  "Physics",
+  "Mathematics",
+  "Workshop",
+  "Computer Science",
+  "Electronics",
+  "Mechanics",
+  "Other"
 ];
 
 // Condition options
@@ -156,27 +180,47 @@ const Products = () => {
   const [filteredProducts, setFilteredProducts] = useState<ProductCardProps[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [selectedSubject, setSelectedSubject] = useState("All Subjects");
   const [selectedCondition, setSelectedCondition] = useState("All Conditions");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1500]);
   const [sortOption, setSortOption] = useState("newest");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [blockchainVerifiedOnly, setBlockchainVerifiedOnly] = useState(false);
   const isMobile = useIsMobile();
+
+  // Load products from localStorage or use initial data
+  useEffect(() => {
+    const localStorageProducts = localStorage.getItem("unimart_products");
+    if (localStorageProducts) {
+      try {
+        const parsedProducts = JSON.parse(localStorageProducts);
+        setProducts([...parsedProducts, ...initialProducts]);
+      } catch (error) {
+        console.error("Error parsing products from localStorage", error);
+        setProducts(initialProducts);
+      }
+    } else {
+      setProducts(initialProducts);
+    }
+  }, []);
 
   // Initialize from URL params
   useEffect(() => {
     const category = searchParams.get("category");
+    const subject = searchParams.get("subject");
     const search = searchParams.get("search");
     
     if (category && categories.includes(category)) {
       setSelectedCategory(category);
     }
     
+    if (subject && subjects.includes(subject)) {
+      setSelectedSubject(subject);
+    }
+    
     if (search) {
       setSearchQuery(search);
     }
-    
-    // Set initial products
-    setProducts(allProducts);
   }, [searchParams]);
 
   // Apply filters
@@ -187,13 +231,18 @@ const Products = () => {
     if (searchQuery) {
       result = result.filter(product => 
         product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+        product.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
     // Apply category filter
     if (selectedCategory !== "All Categories") {
       result = result.filter(product => product.category === selectedCategory);
+    }
+    
+    // Apply subject filter
+    if (selectedSubject !== "All Subjects") {
+      result = result.filter(product => product.subject === selectedSubject);
     }
     
     // Apply condition filter
@@ -205,6 +254,11 @@ const Products = () => {
     result = result.filter(product => 
       product.price >= priceRange[0] && product.price <= priceRange[1]
     );
+    
+    // Apply blockchain verified only filter
+    if (blockchainVerifiedOnly) {
+      result = result.filter(product => product.isBlockchainVerified);
+    }
     
     // Apply sorting
     switch (sortOption) {
@@ -218,15 +272,25 @@ const Products = () => {
         result.sort((a, b) => b.rating - a.rating);
         break;
       case "newest":
-        // For demo purposes, we'll use a simple sort for this
-        result.sort((a, b) => 
-          new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
-        );
+        // For demo purposes, we'll use a simple sort based on postedDate
+        result.sort((a, b) => {
+          const dateA = a.postedDate?.includes("Just now") ? new Date() : 
+                      a.postedDate?.includes("day") ? new Date(Date.now() - parseInt(a.postedDate.split(" ")[0]) * 24 * 60 * 60 * 1000) : 
+                      a.postedDate?.includes("week") ? new Date(Date.now() - parseInt(a.postedDate.split(" ")[0]) * 7 * 24 * 60 * 60 * 1000) : 
+                      new Date();
+          
+          const dateB = b.postedDate?.includes("Just now") ? new Date() : 
+                      b.postedDate?.includes("day") ? new Date(Date.now() - parseInt(b.postedDate.split(" ")[0]) * 24 * 60 * 60 * 1000) : 
+                      b.postedDate?.includes("week") ? new Date(Date.now() - parseInt(b.postedDate.split(" ")[0]) * 7 * 24 * 60 * 60 * 1000) : 
+                      new Date();
+                      
+          return dateB.getTime() - dateA.getTime();
+        });
         break;
     }
     
     setFilteredProducts(result);
-  }, [products, searchQuery, selectedCategory, selectedCondition, priceRange, sortOption]);
+  }, [products, searchQuery, selectedCategory, selectedSubject, selectedCondition, priceRange, blockchainVerifiedOnly, sortOption]);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
@@ -240,6 +304,14 @@ const Products = () => {
       params.delete("search");
     }
     setSearchParams(params);
+    
+    // Show toast for search
+    if (searchQuery) {
+      toast({
+        title: "Searching for products",
+        description: `Showing results for "${searchQuery}"`,
+      });
+    }
   };
 
   // Handle category change
@@ -256,14 +328,35 @@ const Products = () => {
     setSearchParams(params);
   };
 
+  // Handle subject change
+  const handleSubjectChange = (value: string) => {
+    setSelectedSubject(value);
+    
+    // Update URL params
+    const params = new URLSearchParams(searchParams);
+    if (value !== "All Subjects") {
+      params.set("subject", value);
+    } else {
+      params.delete("subject");
+    }
+    setSearchParams(params);
+  };
+
   // Handle reset filters
   const handleResetFilters = () => {
     setSearchQuery("");
     setSelectedCategory("All Categories");
+    setSelectedSubject("All Subjects");
     setSelectedCondition("All Conditions");
     setPriceRange([0, 1500]);
     setSortOption("newest");
+    setBlockchainVerifiedOnly(false);
     setSearchParams({});
+    
+    toast({
+      title: "Filters reset",
+      description: "Showing all available products",
+    });
   };
 
   return (
@@ -287,6 +380,20 @@ const Products = () => {
           >
             Find what you need from fellow students at affordable prices.
           </motion.p>
+
+          {/* Sell Button */}
+          <motion.div 
+            className="mt-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Link to="/sell">
+              <Button className="bg-unimart-600 hover:bg-unimart-700">
+                Sell Your Items
+              </Button>
+            </Link>
+          </motion.div>
         </div>
         
         {/* Search and filters top bar */}
@@ -294,13 +401,12 @@ const Products = () => {
           <div className="md:flex-1">
             <form onSubmit={handleSearch} className="flex">
               <div className="relative flex-grow">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input 
                   type="text"
                   placeholder="Search products..."
-                  className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  icon={<Search className="h-4 w-4" />}
                 />
               </div>
               <Button type="submit" className="ml-2 bg-unimart-600 hover:bg-unimart-700">
@@ -384,6 +490,26 @@ const Products = () => {
                   </Select>
                 </div>
                 
+                {/* Subject filter - NEW */}
+                <div>
+                  <Label className="text-sm font-medium">Subject</Label>
+                  <Select
+                    value={selectedSubject}
+                    onValueChange={handleSubjectChange}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 {/* Condition filter */}
                 <div>
                   <Label className="text-sm font-medium">Condition</Label>
@@ -428,6 +554,8 @@ const Products = () => {
                     type="checkbox"
                     id="blockchain-verified"
                     className="h-4 w-4 rounded border-gray-300 text-unimart-600 focus:ring-unimart-500"
+                    checked={blockchainVerifiedOnly}
+                    onChange={(e) => setBlockchainVerifiedOnly(e.target.checked)}
                   />
                   <label htmlFor="blockchain-verified" className="text-sm text-gray-600">
                     Blockchain verified only
@@ -450,8 +578,10 @@ const Products = () => {
           <div className="flex-1">
             {/* Active filters */}
             {(selectedCategory !== "All Categories" || 
+              selectedSubject !== "All Subjects" ||
               selectedCondition !== "All Conditions" || 
               priceRange[0] > 0 || priceRange[1] < 1500 || 
+              blockchainVerifiedOnly ||
               searchQuery) && (
               <div className="mb-4 flex flex-wrap gap-2">
                 <span className="text-sm text-gray-500 flex items-center">
@@ -473,6 +603,14 @@ const Products = () => {
                   </Badge>
                 )}
                 
+                {selectedSubject !== "All Subjects" && (
+                  <Badge className="p-2 bg-unimart-50 text-unimart-800 border border-unimart-200 hover:bg-unimart-100 cursor-pointer" onClick={() => handleSubjectChange("All Subjects")}>
+                    <BookOpen className="h-3 w-3 mr-1" />
+                    Subject: {selectedSubject}
+                    <X className="ml-1 h-3 w-3" />
+                  </Badge>
+                )}
+                
                 {selectedCondition !== "All Conditions" && (
                   <Badge className="p-2 bg-unimart-50 text-unimart-800 border border-unimart-200 hover:bg-unimart-100 cursor-pointer" onClick={() => setSelectedCondition("All Conditions")}>
                     Condition: {selectedCondition}
@@ -483,6 +621,13 @@ const Products = () => {
                 {(priceRange[0] > 0 || priceRange[1] < 1500) && (
                   <Badge className="p-2 bg-unimart-50 text-unimart-800 border border-unimart-200 hover:bg-unimart-100 cursor-pointer" onClick={() => setPriceRange([0, 1500])}>
                     Price: ₹{priceRange[0]} - ₹{priceRange[1]}
+                    <X className="ml-1 h-3 w-3" />
+                  </Badge>
+                )}
+                
+                {blockchainVerifiedOnly && (
+                  <Badge className="p-2 bg-unimart-50 text-unimart-800 border border-unimart-200 hover:bg-unimart-100 cursor-pointer" onClick={() => setBlockchainVerifiedOnly(false)}>
+                    Blockchain Verified Only
                     <X className="ml-1 h-3 w-3" />
                   </Badge>
                 )}
