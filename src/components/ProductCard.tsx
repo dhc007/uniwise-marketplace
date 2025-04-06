@@ -14,6 +14,7 @@ export interface ProductCardProps {
   category: string;
   condition: string;
   seller: string;
+  subject: string;  // Added subject property
   rating: number;
   postedDate: string;
   isBlockchainVerified?: boolean;

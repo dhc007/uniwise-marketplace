@@ -3,33 +3,82 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "@/hooks/use-toast";
 
 const BlockchainStatus = () => {
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
   const [transactionCount, setTransactionCount] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Simulate blockchain connection status
+  // Initialize blockchain connection on mount
   useEffect(() => {
+    const initBlockchain = async () => {
+      try {
+        // Simulate blockchain connection
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setIsConnected(true);
+        setLastUpdated(new Date());
+        setTransactionCount(Math.floor(Math.random() * 50) + 10);
+        toast({
+          title: "Blockchain Connected",
+          description: "Successfully connected to UniMart blockchain network",
+        });
+      } catch (error) {
+        console.error("Failed to connect to blockchain:", error);
+        setIsConnected(false);
+        toast({
+          title: "Blockchain Connection Failed",
+          description: "Could not connect to UniMart blockchain network",
+          variant: "destructive",
+        });
+      }
+    };
+
+    initBlockchain();
+    
+    // Regular updates
     const interval = setInterval(() => {
-      // Random connection status for demo purposes
-      if (Math.random() > 0.95) {
-        setIsConnected(prev => !prev);
+      if (isConnected) {
+        // Simulate new transactions
+        if (Math.random() > 0.5) {
+          const newTransactions = Math.floor(Math.random() * 3) + 1;
+          setTransactionCount(prev => prev + newTransactions);
+          setLastUpdated(new Date());
+          
+          if (newTransactions > 1) {
+            toast({
+              title: "New Transactions",
+              description: `${newTransactions} new items verified on blockchain`,
+            });
+          }
+        }
+      } else {
+        // Try to reconnect
+        if (Math.random() > 0.7) {
+          setIsConnected(true);
+          toast({
+            title: "Blockchain Reconnected",
+            description: "Successfully reconnected to UniMart blockchain network",
+          });
+        }
       }
-      
-      // Simulate new blockchain transactions
-      if (Math.random() > 0.7) {
-        setTransactionCount(prev => prev + 1);
-      }
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isConnected]);
+
+  const handleClick = () => {
+    toast({
+      title: "Blockchain Status",
+      description: `Connected: ${isConnected ? 'Yes' : 'No'}, Transactions: ${transactionCount}, Last updated: ${lastUpdated?.toLocaleTimeString() || 'Never'}`,
+    });
+  };
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center cursor-pointer">
+          <div className="flex items-center cursor-pointer" onClick={handleClick}>
             <motion.div 
               className={`h-2 w-2 rounded-full mr-2 ${
                 isConnected ? 'bg-green-500' : 'bg-orange-500'
@@ -67,6 +116,11 @@ const BlockchainStatus = () => {
             <p className="text-xs text-muted-foreground">
               Transactions: {transactionCount}
             </p>
+            {lastUpdated && (
+              <p className="text-xs text-muted-foreground">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
           </div>
         </TooltipContent>
       </Tooltip>

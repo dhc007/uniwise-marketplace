@@ -1,18 +1,25 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, ShoppingBag, User, Menu, X } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, X, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/use-auth";
 import BlockchainStatus from "./BlockchainStatus";
+import { toast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user, isAuthenticated } = useAuth();
 
   // Handle scroll
   useEffect(() => {
@@ -35,7 +42,23 @@ const Navbar = () => {
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
+    setIsSearchOpen(false);
   }, [location.pathname]);
+
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    
+    toast({
+      title: "Searching products",
+      description: `Showing results for "${searchQuery}"`,
+    });
+  };
 
   return (
     <header 
@@ -83,18 +106,64 @@ const Navbar = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <BlockchainStatus />
-              <Button variant="ghost" size="icon">
-                <Search className="h-[1.2rem] w-[1.2rem]" />
-              </Button>
+              
+              {isSearchOpen ? (
+                <form onSubmit={handleSearch} className="relative">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search products..."
+                    className="w-48 pr-8"
+                    autoFocus
+                    onBlur={() => {
+                      if (!searchQuery) {
+                        setIsSearchOpen(false);
+                      }
+                    }}
+                  />
+                  <Button 
+                    type="submit" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute right-0 top-0"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </form>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setIsSearchOpen(true)}
+                >
+                  <Search className="h-[1.2rem] w-[1.2rem]" />
+                </Button>
+              )}
+              
+              <Link to="/wishlist">
+                <Button variant="ghost" size="icon">
+                  <Heart className="h-[1.2rem] w-[1.2rem]" />
+                </Button>
+              </Link>
+              
               <Button variant="ghost" size="icon">
                 <ShoppingBag className="h-[1.2rem] w-[1.2rem]" />
               </Button>
-              <Link to="/profile">
-                <Avatar className="transition-all hover:ring-2 hover:ring-unimart-500">
-                  <AvatarFallback className="bg-unimart-100 text-unimart-800">
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
+              
+              <Link to={isAuthenticated ? "/profile" : "/auth"}>
+                {isAuthenticated && user ? (
+                  <Avatar className="transition-all hover:ring-2 hover:ring-unimart-500">
+                    <AvatarFallback className="bg-unimart-100 text-unimart-800">
+                      {user.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Avatar className="transition-all hover:ring-2 hover:ring-unimart-500">
+                    <AvatarFallback className="bg-unimart-100 text-unimart-800">
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
               </Link>
             </motion.div>
           )}
@@ -103,9 +172,19 @@ const Navbar = () => {
           {isMobile && (
             <div className="flex items-center space-x-4">
               <BlockchainStatus />
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+              >
+                <Search className="h-[1.2rem] w-[1.2rem]" />
+              </Button>
+              
               <Button variant="ghost" size="icon">
                 <ShoppingBag className="h-[1.2rem] w-[1.2rem]" />
               </Button>
+              
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -121,6 +200,27 @@ const Navbar = () => {
           )}
         </div>
 
+        {/* Mobile search */}
+        {isMobile && isSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="pb-3"
+          >
+            <form onSubmit={handleSearch}>
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-full"
+                icon={<Search className="h-4 w-4" />}
+                autoFocus
+              />
+            </form>
+          </motion.div>
+        )}
+
         {/* Mobile menu */}
         {isMobile && (
           <motion.div 
@@ -135,13 +235,10 @@ const Navbar = () => {
               <MobileNavLink to="/products">Browse</MobileNavLink>
               <MobileNavLink to="/sell">Sell</MobileNavLink>
               <MobileNavLink to="/about">About</MobileNavLink>
-              <MobileNavLink to="/profile">Profile</MobileNavLink>
-              <div className="pt-2">
-                <Button className="w-full justify-start" variant="outline">
-                  <Search className="mr-2 h-4 w-4" />
-                  Search
-                </Button>
-              </div>
+              <MobileNavLink to="/wishlist">Wishlist</MobileNavLink>
+              <MobileNavLink to={isAuthenticated ? "/profile" : "/auth"}>
+                {isAuthenticated ? "Profile" : "Login / Register"}
+              </MobileNavLink>
             </div>
           </motion.div>
         )}
