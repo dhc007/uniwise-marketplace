@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";  // Added useState
 import { toast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
@@ -20,6 +20,9 @@ import MongoDBService from "./services/mongodb";
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Added loading state to prevent rendering before MongoDB connection is established
+  const [isLoading, setIsLoading] = useState(true);
+
   // Initialize MongoDB connection
   useEffect(() => {
     const initMongoDB = async () => {
@@ -53,11 +56,26 @@ const App = () => {
           description: "Using local storage as fallback",
           variant: "destructive",
         });
+      } finally {
+        // Set loading to false regardless of connection status
+        setIsLoading(false);
       }
     };
 
     initMongoDB();
   }, []);
+
+  // Show a simple loading indicator while MongoDB is connecting
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-unimart-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-medium text-gray-700">Loading application...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
