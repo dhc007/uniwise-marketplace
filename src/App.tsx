@@ -26,53 +26,29 @@ const App = () => {
   useEffect(() => {
     const initMongoDB = async () => {
       try {
-        // Create MongoDB connection 
         const mongoService = MongoDBService.getInstance();
-        
-        // Try to connect first
-        const isConnected = await mongoService.connect();
-        
-        if (isConnected) {
-          console.log("MongoDB connected successfully");
-          toast({
-            title: "Database Connected",
-            description: "Successfully connected to MongoDB database",
-          });
-          
-          // Initialize sample data if needed
-          await mongoService.initializeSampleData();
-        } else {
-          console.warn("MongoDB connection failed, using local storage");
-          toast({
-            title: "Database Connection Failed",
-            description: "Using local storage as fallback",
-            variant: "destructive",
-          });
-        }
+        await mongoService.connect();
+        // Don't wait for database connection to show the UI
+        console.log("MongoDB connection attempt complete");
       } catch (error) {
         console.error("Failed to initialize MongoDB:", error);
-        toast({
-          title: "Database Error",
-          description: "Using local storage as fallback",
-          variant: "destructive",
-        });
       } finally {
-        // Set loading to false regardless of connection status
+        // Always set loading to false after a short delay
         setTimeout(() => {
           setIsLoading(false);
-        }, 1000); // Small delay to ensure UI is ready
+        }, 500);
       }
     };
 
     initMongoDB();
   }, []);
 
-  // Show a simple loading indicator while MongoDB is connecting
+  // Show a simple loading indicator while initializing
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-unimart-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-gray-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Loading application...</p>
         </div>
       </div>

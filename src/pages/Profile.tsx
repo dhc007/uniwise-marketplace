@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import MainLayout from "@/layouts/MainLayout";
@@ -45,7 +46,7 @@ const userData = {
       category: "Textbooks",
       condition: "Good",
       seller: "Aditya K.",
-      subject: "Calculus",
+      subject: "Mathematics",
       rating: 4.2,
       postedDate: "2 days ago",
       isBlockchainVerified: true
