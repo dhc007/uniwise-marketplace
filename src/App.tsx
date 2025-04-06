@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";  // Added useState
+import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
@@ -20,7 +20,6 @@ import MongoDBService from "./services/mongodb";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Added loading state to prevent rendering before MongoDB connection is established
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize MongoDB connection
@@ -34,6 +33,7 @@ const App = () => {
         const isConnected = await mongoService.connect();
         
         if (isConnected) {
+          console.log("MongoDB connected successfully");
           toast({
             title: "Database Connected",
             description: "Successfully connected to MongoDB database",
@@ -42,12 +42,12 @@ const App = () => {
           // Initialize sample data if needed
           await mongoService.initializeSampleData();
         } else {
+          console.warn("MongoDB connection failed, using local storage");
           toast({
             title: "Database Connection Failed",
             description: "Using local storage as fallback",
             variant: "destructive",
           });
-          console.warn("Falling back to local storage for data persistence");
         }
       } catch (error) {
         console.error("Failed to initialize MongoDB:", error);
@@ -58,7 +58,9 @@ const App = () => {
         });
       } finally {
         // Set loading to false regardless of connection status
-        setIsLoading(false);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000); // Small delay to ensure UI is ready
       }
     };
 
