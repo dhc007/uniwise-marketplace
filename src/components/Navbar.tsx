@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import BlockchainStatus from "./BlockchainStatus";
 import { toast } from "@/hooks/use-toast";
+import MongoDBService from "@/services/mongodb";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -46,18 +47,50 @@ const Navbar = () => {
   }, [location.pathname]);
 
   // Handle search
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
-    navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
-    setIsSearchOpen(false);
-    setSearchQuery("");
-    
-    toast({
-      title: "Searching products",
-      description: `Showing results for "${searchQuery}"`,
-    });
+    try {
+      // Try to search using MongoDB first
+      const mongoService = MongoDBService.getInstance();
+      if (mongoService.isConnectedToMongoDB()) {
+        const results = await mongoService.searchProducts(searchQuery);
+        
+        if (results && results.length > 0) {
+          // Store results temporarily in localStorage for the products page to use
+          localStorage.setItem('unimart_search_results', JSON.stringify(results));
+          localStorage.setItem('unimart_last_search', searchQuery);
+          
+          navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+          setIsSearchOpen(false);
+          setSearchQuery("");
+          
+          toast({
+            title: "Search Results",
+            description: `Found ${results.length} items matching "${searchQuery}"`,
+          });
+          return;
+        }
+      }
+      
+      // Fallback to client-side filtering
+      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      setIsSearchOpen(false);
+      setSearchQuery("");
+      
+      toast({
+        title: "Searching products",
+        description: `Showing results for "${searchQuery}"`,
+      });
+    } catch (error) {
+      console.error("Search error:", error);
+      
+      // Ultimate fallback
+      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      setIsSearchOpen(false);
+      setSearchQuery("");
+    }
   };
 
   return (
@@ -214,7 +247,6 @@ const Navbar = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
                 className="w-full"
-                icon={<Search className="h-4 w-4" />}
                 autoFocus
               />
             </form>

@@ -5,9 +5,19 @@ import { Link } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 
+interface BlockchainTransaction {
+  id: string;
+  timestamp: Date;
+  productId?: string;
+  productTitle?: string;
+  type: 'verification' | 'listing' | 'purchase';
+  status: 'confirmed' | 'pending';
+}
+
 const BlockchainStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [transactionCount, setTransactionCount] = useState(0);
+  const [transactions, setTransactions] = useState<BlockchainTransaction[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Initialize blockchain connection on mount
@@ -16,9 +26,32 @@ const BlockchainStatus = () => {
       try {
         // Simulate blockchain connection
         await new Promise((resolve) => setTimeout(resolve, 1500));
+        
+        // Mock initial transactions
+        const initialTransactions: BlockchainTransaction[] = [
+          {
+            id: 'tx_' + Math.random().toString(36).substring(2, 10),
+            timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+            productId: '1',
+            productTitle: 'Engineering Graphics Drafting Kit',
+            type: 'verification',
+            status: 'confirmed'
+          },
+          {
+            id: 'tx_' + Math.random().toString(36).substring(2, 10),
+            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+            productId: '3',
+            productTitle: 'Data Structures and Algorithms Textbook',
+            type: 'listing',
+            status: 'confirmed'
+          }
+        ];
+        
+        setTransactions(initialTransactions);
         setIsConnected(true);
+        setTransactionCount(initialTransactions.length);
         setLastUpdated(new Date());
-        setTransactionCount(Math.floor(Math.random() * 50) + 10);
+        
         toast({
           title: "Blockchain Connected",
           description: "Successfully connected to UniMart blockchain network",
@@ -39,16 +72,36 @@ const BlockchainStatus = () => {
     // Regular updates
     const interval = setInterval(() => {
       if (isConnected) {
-        // Simulate new transactions
-        if (Math.random() > 0.5) {
-          const newTransactions = Math.floor(Math.random() * 3) + 1;
-          setTransactionCount(prev => prev + newTransactions);
+        // Simulate new transactions with approximately 30% chance
+        if (Math.random() > 0.7) {
+          const transactionTypes = ['verification', 'listing', 'purchase'] as const;
+          const productTitles = [
+            'Engineering Graphics Drafting Kit',
+            'Chemistry Lab Coat (White)',
+            'Data Structures and Algorithms Textbook',
+            'Mechanical Engineering Drawing Tools',
+            'Circuit Analysis Textbook',
+            'Scientific Calculator'
+          ];
+          
+          const newTransaction: BlockchainTransaction = {
+            id: 'tx_' + Math.random().toString(36).substring(2, 10),
+            timestamp: new Date(),
+            productId: String(Math.floor(Math.random() * 10) + 1),
+            productTitle: productTitles[Math.floor(Math.random() * productTitles.length)],
+            type: transactionTypes[Math.floor(Math.random() * transactionTypes.length)],
+            status: Math.random() > 0.2 ? 'confirmed' : 'pending'
+          };
+          
+          setTransactions(prev => [newTransaction, ...prev].slice(0, 20)); // Keep last 20 transactions
+          setTransactionCount(prev => prev + 1);
           setLastUpdated(new Date());
           
-          if (newTransactions > 1) {
+          // Only notify for certain transaction types
+          if (newTransaction.type === 'verification' || newTransaction.type === 'purchase') {
             toast({
-              title: "New Transactions",
-              description: `${newTransactions} new items verified on blockchain`,
+              title: `New Blockchain ${newTransaction.type === 'verification' ? 'Verification' : 'Transaction'}`,
+              description: `${newTransaction.productTitle} was ${newTransaction.type === 'verification' ? 'verified' : 'purchased'} on the blockchain`,
             });
           }
         }
@@ -62,16 +115,23 @@ const BlockchainStatus = () => {
           });
         }
       }
-    }, 10000);
+    }, 15000); // Check every 15 seconds
 
     return () => clearInterval(interval);
   }, [isConnected]);
 
   const handleClick = () => {
-    toast({
-      title: "Blockchain Status",
-      description: `Connected: ${isConnected ? 'Yes' : 'No'}, Transactions: ${transactionCount}, Last updated: ${lastUpdated?.toLocaleTimeString() || 'Never'}`,
-    });
+    if (transactions.length > 0) {
+      toast({
+        title: "Recent Blockchain Activity",
+        description: `${transactions[0].productTitle} was recently ${transactions[0].type}d (${transactions[0].status})`,
+      });
+    } else {
+      toast({
+        title: "Blockchain Status",
+        description: `Connected: ${isConnected ? 'Yes' : 'No'}, Transactions: ${transactionCount}, Last updated: ${lastUpdated?.toLocaleTimeString() || 'Never'}`,
+      });
+    }
   };
 
   return (
@@ -108,7 +168,7 @@ const BlockchainStatus = () => {
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          <div className="text-sm">
+          <div className="text-sm max-w-[300px]">
             <p className="font-medium">Blockchain Status</p>
             <p className="text-xs text-muted-foreground">
               {isConnected ? 'Connected' : 'Connecting...'}
@@ -120,6 +180,20 @@ const BlockchainStatus = () => {
               <p className="text-xs text-muted-foreground">
                 Last updated: {lastUpdated.toLocaleTimeString()}
               </p>
+            )}
+            
+            {transactions.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <p className="text-xs font-medium mb-1">Latest Activity:</p>
+                <div className="max-h-[100px] overflow-y-auto">
+                  {transactions.slice(0, 3).map(tx => (
+                    <div key={tx.id} className="text-xs mb-1 last:mb-0">
+                      <span className={`inline-block w-2 h-2 rounded-full mr-1 ${tx.status === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                      {tx.productTitle} - {tx.type}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </TooltipContent>

@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -23,13 +24,35 @@ const App = () => {
   useEffect(() => {
     const initMongoDB = async () => {
       try {
-        // For demo purposes, we'll connect to a placeholder URL
-        // In a real app, this would be your actual MongoDB connection string
+        // Create MongoDB connection 
         const mongoService = MongoDBService.getInstance();
-        await mongoService.connect("mongodb://localhost:27017/unimart");
-        console.log("MongoDB initialized");
+        
+        // Try to connect first
+        const isConnected = await mongoService.connect();
+        
+        if (isConnected) {
+          toast({
+            title: "Database Connected",
+            description: "Successfully connected to MongoDB database",
+          });
+          
+          // Initialize sample data if needed
+          await mongoService.initializeSampleData();
+        } else {
+          toast({
+            title: "Database Connection Failed",
+            description: "Using local storage as fallback",
+            variant: "destructive",
+          });
+          console.warn("Falling back to local storage for data persistence");
+        }
       } catch (error) {
         console.error("Failed to initialize MongoDB:", error);
+        toast({
+          title: "Database Error",
+          description: "Using local storage as fallback",
+          variant: "destructive",
+        });
       }
     };
 
