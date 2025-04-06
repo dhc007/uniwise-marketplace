@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import MainLayout from "@/layouts/MainLayout";
@@ -32,6 +31,7 @@ const userData = {
       category: "Drafting Tools",
       condition: "Like New",
       seller: "Aditya K.",
+      subject: "Engineering Graphics",
       rating: 4.8,
       postedDate: "3 days ago",
       isBlockchainVerified: true
@@ -45,6 +45,7 @@ const userData = {
       category: "Textbooks",
       condition: "Good",
       seller: "Aditya K.",
+      subject: "Calculus",
       rating: 4.2,
       postedDate: "2 days ago",
       isBlockchainVerified: true
@@ -60,6 +61,7 @@ const userData = {
       category: "Lab Coats",
       condition: "Good",
       seller: "Priya S.",
+      subject: "Chemistry",
       rating: 4.5,
       postedDate: "1 week ago"
     }

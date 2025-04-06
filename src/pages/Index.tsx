@@ -19,6 +19,7 @@ const featuredProducts: ProductCardProps[] = [
     category: "Drafting Tools",
     condition: "Like New",
     seller: "Rahul M.",
+    subject: "Engineering Graphics",
     rating: 4.8,
     postedDate: "3 days ago",
     isBlockchainVerified: true
@@ -32,6 +33,7 @@ const featuredProducts: ProductCardProps[] = [
     category: "Lab Coats",
     condition: "Good",
     seller: "Priya S.",
+    subject: "Chemistry",
     rating: 4.5,
     postedDate: "1 week ago"
   },
@@ -44,6 +46,7 @@ const featuredProducts: ProductCardProps[] = [
     category: "Textbooks",
     condition: "Good",
     seller: "Aditya K.",
+    subject: "Calculus",
     rating: 4.2,
     postedDate: "2 days ago",
     isBlockchainVerified: true
@@ -57,6 +60,7 @@ const featuredProducts: ProductCardProps[] = [
     category: "Tools",
     condition: "Very Good",
     seller: "Vikram P.",
+    subject: "Engineering Workshop",
     rating: 4.7,
     postedDate: "5 days ago"
   }
