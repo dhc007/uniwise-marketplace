@@ -1,6 +1,7 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,97 +10,119 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Settings, Star, Package, History, Heart, Clock, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-
-// Mock user data
-const userData = {
-  name: "Aditya Kumar",
-  email: "aditya.kumar@university.edu",
-  department: "Information Technology",
-  year: "4th Year",
-  avatar: "https://i.pravatar.cc/150?u=aditya",
-  location: "North Campus Hostel",
-  joinedDate: "August 2021",
-  rating: 4.7,
-  totalSales: 14,
-  totalPurchases: 8,
-  listedProducts: [
-    {
-      id: "1",
-      title: "Engineering Graphics Drafting Kit",
-      price: 850,
-      description: "Complete drafting kit for Engineering Graphics course. Includes compass, set squares, scales, and more.",
-      image: "https://images.unsplash.com/photo-1611784728558-6a9848d4c72d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      category: "Drafting Tools",
-      condition: "Like New",
-      seller: "Aditya K.",
-      subject: "Engineering Graphics",
-      rating: 4.8,
-      postedDate: "3 days ago",
-      isBlockchainVerified: true
-    },
-    {
-      id: "3",
-      title: "Calculus Textbook (8th Edition)",
-      price: 450,
-      description: "Calculus: Early Transcendentals by James Stewart. Minimal highlighting, all pages intact.",
-      image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      category: "Textbooks",
-      condition: "Good",
-      seller: "Aditya K.",
-      subject: "Mathematics",
-      rating: 4.2,
-      postedDate: "2 days ago",
-      isBlockchainVerified: true
-    }
-  ],
-  savedProducts: [
-    {
-      id: "2",
-      title: "Chemistry Lab Coat (White)",
-      price: 350,
-      description: "Standard white lab coat for chemistry labs. Size M. Used for just one semester, still in great condition.",
-      image: "https://images.unsplash.com/photo-1581056771107-24247a7e6794?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      category: "Lab Coats",
-      condition: "Good",
-      seller: "Priya S.",
-      subject: "Chemistry",
-      rating: 4.5,
-      postedDate: "1 week ago"
-    }
-  ],
-  transactions: [
-    {
-      id: "t1",
-      type: "sold",
-      item: "Physics Lab Manual",
-      price: 200,
-      buyer: "Rohit S.",
-      date: "15 Apr 2023",
-      status: "completed"
-    },
-    {
-      id: "t2",
-      type: "purchased",
-      item: "Programming Fundamentals Textbook",
-      price: 400,
-      seller: "Neha P.",
-      date: "28 Mar 2023",
-      status: "completed"
-    },
-    {
-      id: "t3",
-      type: "sold",
-      item: "USB Multimeter",
-      price: 650,
-      buyer: "Vikram J.",
-      date: "10 Feb 2023",
-      status: "completed"
-    }
-  ]
-};
+import { useAuth } from "@/hooks/use-auth";
+import MockDataService from "@/services/mockDataService";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("listings");
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [userData, setUserData] = useState({
+    name: "Aditya Kumar",
+    email: "aditya.kumar@university.edu",
+    department: "Information Technology",
+    year: "4th Year",
+    avatar: "https://i.pravatar.cc/150?u=aditya",
+    location: "North Campus Hostel",
+    joinedDate: "August 2021",
+    rating: 4.7,
+    totalSales: 14,
+    totalPurchases: 8,
+    listedProducts: [],
+    savedProducts: [],
+    transactions: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/auth");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Load user data and products
+  useEffect(() => {
+    const loadUserData = async () => {
+      setIsLoading(true);
+      try {
+        // Get products from mock data service
+        const dataService = MockDataService.getInstance();
+        const allProducts = await dataService.getProducts();
+        
+        // For demo, set first 2 products as user's listings
+        const userListings = allProducts.slice(0, 2).map(product => ({
+          ...product,
+          seller: userData.name
+        }));
+        
+        // Set another product as saved
+        const savedProduct = allProducts.slice(2, 3);
+        
+        // Sample transactions data
+        const sampleTransactions = [
+          {
+            id: "t1",
+            type: "sold",
+            item: "Physics Lab Manual",
+            price: 200,
+            buyer: "Rohit S.",
+            date: "15 Apr 2023",
+            status: "completed"
+          },
+          {
+            id: "t2",
+            type: "purchased",
+            item: "Programming Fundamentals Textbook",
+            price: 400,
+            seller: "Neha P.",
+            date: "28 Mar 2023",
+            status: "completed"
+          },
+          {
+            id: "t3",
+            type: "sold",
+            item: "USB Multimeter",
+            price: 650,
+            buyer: "Vikram J.",
+            date: "10 Feb 2023",
+            status: "completed"
+          }
+        ];
+        
+        // Update user data with products
+        setUserData(prevData => ({
+          ...prevData,
+          listedProducts: userListings,
+          savedProducts: savedProduct,
+          transactions: sampleTransactions,
+          // If user is logged in, use their info
+          ...(user && {
+            name: user.name || prevData.name,
+            email: user.email || prevData.email,
+            avatar: `https://i.pravatar.cc/150?u=${user.name?.replace(/\s+/g, '') || 'aditya'}`
+          })
+        }));
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-unimart-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading profile...</p>
+        </div>
+      </MainLayout>
+    );
+  }
   
   return (
     <MainLayout>

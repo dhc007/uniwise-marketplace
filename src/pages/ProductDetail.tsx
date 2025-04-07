@@ -8,17 +8,17 @@ import BlockchainStatus from "@/components/BlockchainStatus";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+import MockDataService from "@/services/mockDataService";
 import { 
   ArrowLeft, 
   Star, 
   Clock, 
   MessageCircle, 
-  ShieldCheck,
   Share2,
   BookOpen
 } from "lucide-react";
 
-// Define the full Product type
+// Define the Product type
 interface Product {
   id: string;
   title: string;
@@ -44,65 +44,6 @@ interface Product {
   isBlockchainVerified?: boolean;
 }
 
-// Sample products data - used as fallback
-const sampleProducts: Product[] = [
-  {
-    id: "1",
-    title: "Engineering Graphics Drafting Kit",
-    price: 850,
-    description: "Complete drafting kit for Engineering Graphics course. Includes compass, set squares, scales, and more. Used for one semester only. In excellent condition with all pieces intact and working perfectly. The carrying case has minor wear but provides good protection for all components. Original user manual included.",
-    images: [
-      "https://images.unsplash.com/photo-1611784728558-6a9848d4c72d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1598301257982-0cf014dabbcd?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1560785496-3c9d27877182?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&q=80",
-    ],
-    image: "https://images.unsplash.com/photo-1611784728558-6a9848d4c72d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80",
-    category: "Drafting Tools",
-    condition: "Like New",
-    subject: "Engineering Graphics",
-    seller: "Rahul M.",
-    sellerDetails: {
-      name: "Rahul M.",
-      department: "Computer Science",
-      year: "3rd Year",
-      avatar: "https://i.pravatar.cc/150?u=rahul",
-      rating: 4.8,
-      totalSales: 12
-    },
-    rating: 4.8,
-    postedDate: "3 days ago",
-    location: "South Campus",
-    isBlockchainVerified: true
-  },
-  {
-    id: "2",
-    title: "Chemistry Lab Coat (White)",
-    price: 350,
-    description: "Standard white lab coat for chemistry labs. Size M. Used for just one semester, still in great condition with no stains or tears. Perfect for first year chemistry practical classes.",
-    images: [
-      "https://images.unsplash.com/photo-1581056771107-24247a7e6794?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1599045118108-bf9954418b76?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&q=80",
-    ],
-    image: "https://images.unsplash.com/photo-1581056771107-24247a7e6794?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80",
-    category: "Lab Coats",
-    condition: "Good",
-    subject: "Chemistry",
-    seller: "Priya S.",
-    sellerDetails: {
-      name: "Priya S.",
-      department: "Biotechnology",
-      year: "4th Year",
-      avatar: "https://i.pravatar.cc/150?u=priya",
-      rating: 4.5,
-      totalSales: 8
-    },
-    rating: 4.5,
-    postedDate: "1 week ago",
-    location: "North Campus",
-    isBlockchainVerified: false
-  }
-];
-
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -110,53 +51,42 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
-  // Load product from localStorage or use sample data
+  // Load product data
   useEffect(() => {
-    const loadProduct = () => {
-      setLoading(true);
+    const loadProduct = async () => {
+      if (!id) return;
       
-      // Try to get from localStorage first
-      const localStorageProducts = localStorage.getItem("unimart_products");
-      let allProducts: Product[] = [];
-      
-      if (localStorageProducts) {
-        try {
-          const parsedProducts = JSON.parse(localStorageProducts);
-          allProducts = [...parsedProducts, ...sampleProducts];
-        } catch (error) {
-          console.error("Error parsing products from localStorage", error);
-          allProducts = [...sampleProducts];
-        }
-      } else {
-        allProducts = [...sampleProducts];
-      }
-      
-      // Find the product by id
-      const foundProduct = allProducts.find(p => p.id === id);
-      
-      if (foundProduct) {
-        // Handle product with single image vs multiple images
-        if (!foundProduct.images && foundProduct.image) {
-          foundProduct.images = [foundProduct.image];
-        }
+      try {
+        setLoading(true);
+        const dataService = MockDataService.getInstance();
+        const productData = await dataService.getProductById(id);
         
-        // If no sellerDetails, create mock one from seller string
-        if (!foundProduct.sellerDetails && foundProduct.seller) {
-          const sellerName = foundProduct.seller;
-          foundProduct.sellerDetails = {
-            name: sellerName,
-            department: "Student",
-            year: "Current Student",
-            avatar: `https://i.pravatar.cc/150?u=${sellerName.replace(/\s+/g, '')}`,
-            rating: foundProduct.rating || 4.5,
-            totalSales: Math.floor(Math.random() * 15) + 1
-          };
+        if (productData) {
+          // Handle product with single image vs multiple images
+          if (!productData.images && productData.image) {
+            productData.images = [productData.image];
+          }
+          
+          // If no sellerDetails, create mock one from seller string
+          if (!productData.sellerDetails && productData.seller) {
+            const sellerName = productData.seller;
+            productData.sellerDetails = {
+              name: sellerName,
+              department: "Student",
+              year: "Current Student",
+              avatar: `https://i.pravatar.cc/150?u=${sellerName.replace(/\s+/g, '')}`,
+              rating: productData.rating || 4.5,
+              totalSales: Math.floor(Math.random() * 15) + 1
+            };
+          }
+          
+          setProduct(productData);
         }
-        
-        setProduct(foundProduct);
+      } catch (error) {
+        console.error("Error loading product:", error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     loadProduct();

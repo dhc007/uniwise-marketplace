@@ -1,69 +1,32 @@
 
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/layouts/MainLayout";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
+import MockDataService from "@/services/mockDataService";
 
 const Index = () => {
-  // Featured products data
-  const featuredProducts = [
-    {
-      id: "1",
-      title: "Engineering Graphics Drafting Kit",
-      price: 850,
-      description: "Complete drafting kit for Engineering Graphics course with all necessary tools.",
-      image: "https://images.unsplash.com/photo-1611784728558-6a9848d4c72d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      category: "Drafting Tools",
-      condition: "Like New",
-      seller: "Rahul M.",
-      subject: "Engineering Graphics",
-      rating: 4.8,
-      postedDate: "3 days ago",
-      isBlockchainVerified: true
-    },
-    {
-      id: "2",
-      title: "Chemistry Lab Coat (White)",
-      price: 350,
-      description: "Standard white lab coat for chemistry labs. Size M. Used for just one semester.",
-      image: "https://images.unsplash.com/photo-1581056771107-24247a7e6794?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      category: "Lab Coats",
-      condition: "Good",
-      seller: "Priya S.",
-      subject: "Chemistry",
-      rating: 4.5,
-      postedDate: "1 week ago"
-    },
-    {
-      id: "3",
-      title: "Calculus Textbook (8th Edition)",
-      price: 450,
-      description: "Calculus: Early Transcendentals by James Stewart. Minimal highlighting, all pages intact.",
-      image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      category: "Textbooks",
-      condition: "Good",
-      seller: "Aditya K.",
-      subject: "Mathematics",
-      rating: 4.2,
-      postedDate: "2 days ago",
-      isBlockchainVerified: true
-    },
-    {
-      id: "4",
-      title: "Workshop Tools Set",
-      price: 1200,
-      description: "Complete set of basic workshop tools required for the Engineering Workshop course.",
-      image: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      category: "Tools",
-      condition: "Very Good",
-      seller: "Vikram P.",
-      subject: "Workshop",
-      rating: 4.7,
-      postedDate: "5 days ago"
-    }
-  ];
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const dataService = MockDataService.getInstance();
+        const products = await dataService.getProducts();
+        setFeaturedProducts(products.slice(0, 4)); // Get first 4 products
+      } catch (error) {
+        console.error("Error loading products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
 
   return (
     <MainLayout>
@@ -85,11 +48,18 @@ const Index = () => {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="py-10 text-center">
+              <div className="w-12 h-12 border-4 border-gray-300 border-t-unimart-500 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading products...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))}
+            </div>
+          )}
           
           <div className="text-center mt-10">
             <Link to="/products">

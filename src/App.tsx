@@ -14,21 +14,21 @@ import Sell from "./pages/Sell";
 import About from "./pages/About";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
-import MongoDBService from "./services/mongodb";
+import MockDataService from "./services/mockDataService";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize mock MongoDB service
+  // Initialize mock data service
   useEffect(() => {
-    const initMockData = async () => {
+    const initializeData = async () => {
       try {
-        // Get MongoDB service instance and initialize it
-        const mongoService = MongoDBService.getInstance();
-        console.log("Initializing mock MongoDB service");
-        await mongoService.connect();
+        // Get data service instance and initialize it
+        const dataService = MockDataService.getInstance();
+        console.log("Initializing mock data service");
+        await dataService.initializeSampleData();
       } catch (error) {
         console.error("Failed to initialize mock data:", error);
       } finally {
@@ -39,7 +39,7 @@ const App = () => {
       }
     };
 
-    initMockData();
+    initializeData();
   }, []);
 
   // Show a simple loading indicator while initializing

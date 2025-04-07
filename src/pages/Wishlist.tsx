@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { ProductCardProps } from "@/components/ProductCard";
+import MockDataService from "@/services/mockDataService";
 
 const Wishlist = () => {
   const { isAuthenticated } = useAuth();
@@ -17,7 +18,7 @@ const Wishlist = () => {
 
   useEffect(() => {
     // Load wishlist from localStorage
-    const loadWishlist = () => {
+    const loadWishlist = async () => {
       setIsLoading(true);
       try {
         const storedWishlist = localStorage.getItem("unimart_wishlist");
@@ -25,36 +26,10 @@ const Wishlist = () => {
           setWishlistItems(JSON.parse(storedWishlist));
         } else {
           // Demo data if no wishlist exists
-          const demoWishlist = [
-            {
-              id: "1",
-              title: "Engineering Graphics Drafting Kit",
-              price: 850,
-              description: "Complete drafting kit for Engineering Graphics course. Includes compass, set squares, scales, and more. Used for one semester only.",
-              image: "https://images.unsplash.com/photo-1611784728558-6a9848d4c72d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-              category: "Drafting Tools",
-              condition: "Like New",
-              seller: "Rahul M.",
-              subject: "Engineering Graphics",
-              rating: 4.8,
-              postedDate: "3 days ago",
-              isBlockchainVerified: true
-            },
-            {
-              id: "6",
-              title: "Scientific Calculator (Casio FX-991EX)",
-              price: 900,
-              description: "Advanced scientific calculator perfect for engineering courses. All functions working perfectly, like new condition.",
-              image: "https://images.unsplash.com/photo-1564939558297-fc396f18e5c7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-              category: "Electronics",
-              condition: "Like New",
-              seller: "Arjun T.",
-              subject: "Mathematics",
-              rating: 4.9,
-              postedDate: "4 days ago",
-              isBlockchainVerified: true
-            }
-          ];
+          const dataService = MockDataService.getInstance();
+          const products = await dataService.getProducts();
+          const demoWishlist = [products[0], products[3]].slice(0, 2);
+          
           setWishlistItems(demoWishlist);
           localStorage.setItem("unimart_wishlist", JSON.stringify(demoWishlist));
         }
