@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingBag, User, Menu, X, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -93,6 +93,20 @@ const Navbar = () => {
     }
   };
 
+  // Toggle search in desktop mode
+  const toggleDesktopSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
+    // Focus the input after state update
+    if (!isSearchOpen) {
+      setTimeout(() => {
+        const searchInput = document.getElementById('desktop-search-input');
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }, 100);
+    }
+  };
+
   return (
     <header 
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
@@ -140,46 +154,66 @@ const Navbar = () => {
             >
               <BlockchainStatus />
               
-              {isSearchOpen ? (
-                <form onSubmit={handleSearch} className="relative">
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search products..."
-                    className="w-48 pr-8"
-                    autoFocus
-                    onBlur={() => {
-                      if (!searchQuery) {
-                        setIsSearchOpen(false);
-                      }
-                    }}
-                  />
-                  <Button 
-                    type="submit" 
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute right-0 top-0"
+              <AnimatePresence mode="wait">
+                {isSearchOpen ? (
+                  <motion.form 
+                    onSubmit={handleSearch} 
+                    className="relative"
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: "200px", opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </form>
-              ) : (
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setIsSearchOpen(true)}
-                >
-                  <Search className="h-[1.2rem] w-[1.2rem]" />
-                </Button>
-              )}
+                    <Input
+                      id="desktop-search-input"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search products..."
+                      className="pr-8"
+                      autoFocus
+                      onBlur={() => {
+                        // Small delay to allow for clicking the search button
+                        setTimeout(() => {
+                          if (!searchQuery.trim()) {
+                            setIsSearchOpen(false);
+                          }
+                        }, 200);
+                      }}
+                    />
+                    <Button 
+                      type="submit" 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute right-0 top-0"
+                    >
+                      <Search className="h-4 w-4" />
+                    </Button>
+                  </motion.form>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={toggleDesktopSearch}
+                      className="hover:bg-gray-100"
+                    >
+                      <Search className="h-[1.2rem] w-[1.2rem]" />
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               
               <Link to="/wishlist">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="hover:bg-gray-100">
                   <Heart className="h-[1.2rem] w-[1.2rem]" />
                 </Button>
               </Link>
               
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="hover:bg-gray-100">
                 <ShoppingBag className="h-[1.2rem] w-[1.2rem]" />
               </Button>
               
@@ -210,18 +244,22 @@ const Navbar = () => {
                 variant="ghost" 
                 size="icon"
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="hover:bg-gray-100"
               >
                 <Search className="h-[1.2rem] w-[1.2rem]" />
               </Button>
               
-              <Button variant="ghost" size="icon">
-                <ShoppingBag className="h-[1.2rem] w-[1.2rem]" />
-              </Button>
+              <Link to="/wishlist" className="flex items-center justify-center">
+                <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+                  <Heart className="h-[1.2rem] w-[1.2rem]" />
+                </Button>
+              </Link>
               
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="hover:bg-gray-100"
               >
                 {isMenuOpen ? (
                   <X className="h-6 w-6" />
@@ -234,46 +272,53 @@ const Navbar = () => {
         </div>
 
         {/* Mobile search */}
-        {isMobile && isSearchOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="pb-3"
-          >
-            <form onSubmit={handleSearch}>
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="w-full"
-                autoFocus
-              />
-            </form>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {isMobile && isSearchOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="pb-3"
+            >
+              <form onSubmit={handleSearch} className="flex">
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products..."
+                  className="w-full"
+                  autoFocus
+                />
+                <Button type="submit" className="ml-2 bg-unimart-600">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Mobile menu */}
-        {isMobile && (
-          <motion.div 
-            className="md:hidden overflow-hidden"
-            initial="hidden"
-            animate={isMenuOpen ? "visible" : "hidden"}
-            variants={menuVariants}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="px-2 pb-4 pt-2 space-y-1">
-              <MobileNavLink to="/">Home</MobileNavLink>
-              <MobileNavLink to="/products">Browse</MobileNavLink>
-              <MobileNavLink to="/sell">Sell</MobileNavLink>
-              <MobileNavLink to="/about">About</MobileNavLink>
-              <MobileNavLink to="/wishlist">Wishlist</MobileNavLink>
-              <MobileNavLink to={isAuthenticated ? "/profile" : "/auth"}>
-                {isAuthenticated ? "Profile" : "Login / Register"}
-              </MobileNavLink>
-            </div>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {isMobile && (
+            <motion.div 
+              className="md:hidden overflow-hidden"
+              initial="hidden"
+              animate={isMenuOpen ? "visible" : "hidden"}
+              variants={menuVariants}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="px-2 pb-4 pt-2 space-y-1">
+                <MobileNavLink to="/">Home</MobileNavLink>
+                <MobileNavLink to="/products">Browse</MobileNavLink>
+                <MobileNavLink to="/sell">Sell</MobileNavLink>
+                <MobileNavLink to="/about">About</MobileNavLink>
+                <MobileNavLink to="/wishlist">Wishlist</MobileNavLink>
+                <MobileNavLink to={isAuthenticated ? "/profile" : "/auth"}>
+                  {isAuthenticated ? "Profile" : "Login / Register"}
+                </MobileNavLink>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );

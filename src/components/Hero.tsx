@@ -5,11 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, Search, BookOpen, Shirt, Ruler, Beaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import MockDataService from "@/services/mockDataService";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [scrollY, setScrollY] = useState(0);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,6 +20,20 @@ const Hero = () => {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const dataService = MockDataService.getInstance();
+        const products = await dataService.getProducts();
+        setFeaturedProducts(products.slice(0, 4)); // Get first 4 products
+      } catch (error) {
+        console.error("Error loading products:", error);
+      }
+    };
+
+    loadProducts();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -145,7 +161,7 @@ const Hero = () => {
             </motion.div>
           </div>
 
-          {/* Right column (illustration) */}
+          {/* Right column (real product showcase) */}
           <motion.div 
             className="relative hidden lg:block"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -155,20 +171,27 @@ const Hero = () => {
             <div className="relative rounded-xl overflow-hidden bg-white shadow-2xl border border-gray-100">
               <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex items-center justify-center">
                 <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
-                  {/* Sample product cards */}
-                  {[1, 2, 3, 4].map((item) => (
+                  {/* Real product cards */}
+                  {featuredProducts.map((product, index) => (
                     <motion.div 
-                      key={item}
-                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                      key={product.id}
+                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                       whileHover={{ y: -5, transition: { duration: 0.2 } }}
                       style={{
-                        y: scrollY * (0.02 * item) * (item % 2 === 0 ? -1 : 1)
+                        y: scrollY * (0.02 * (index + 1)) * ((index + 1) % 2 === 0 ? -1 : 1)
                       }}
+                      onClick={() => navigate(`/product/${product.id}`)}
                     >
-                      <div className="h-24 bg-gray-200" />
+                      <div className="h-24 bg-gray-200 overflow-hidden">
+                        <img 
+                          src={product.image} 
+                          alt={product.title} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                       <div className="p-3">
-                        <div className="h-3 w-3/4 bg-gray-200 rounded-full mb-2" />
-                        <div className="h-2 w-1/2 bg-gray-200 rounded-full" />
+                        <div className="text-xs font-medium truncate">{product.title}</div>
+                        <div className="text-xs text-green-600 font-medium">₹{product.price}</div>
                       </div>
                     </motion.div>
                   ))}
@@ -189,8 +212,10 @@ const Hero = () => {
                 repeatType: "mirror"
               }}
             >
-              <div className="h-2 w-1/2 bg-gray-200 rounded-full mb-2" />
-              <div className="h-6 w-full bg-gray-200 rounded-lg" />
+              <div className="text-xs font-semibold text-unimart-600 mb-1">Verified on Blockchain</div>
+              <div className="h-2 w-full bg-green-200 rounded-full relative">
+                <div className="h-2 w-3/4 bg-green-500 rounded-full absolute left-0 top-0"></div>
+              </div>
             </motion.div>
 
             <motion.div 
@@ -207,10 +232,10 @@ const Hero = () => {
               }}
             >
               <div className="flex items-center space-x-2">
-                <div className="h-6 w-6 rounded-full bg-unimart-100" />
+                <div className="h-6 w-6 rounded-full bg-unimart-100 flex items-center justify-center text-xs font-bold text-unimart-700">U</div>
                 <div>
-                  <div className="h-2 w-16 bg-gray-200 rounded-full mb-1" />
-                  <div className="h-2 w-10 bg-gray-200 rounded-full" />
+                  <div className="h-2 w-16 bg-unimart-200 rounded-full mb-1"></div>
+                  <div className="h-2 w-10 bg-unimart-300 rounded-full"></div>
                 </div>
               </div>
             </motion.div>

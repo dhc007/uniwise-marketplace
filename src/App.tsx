@@ -15,22 +15,31 @@ import About from "./pages/About";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
 import MockDataService from "./services/mockDataService";
+import MongoDBService from "./services/mongodb";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize mock data service
+  // Initialize data services
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Get data service instance and initialize it
-        const dataService = MockDataService.getInstance();
-        console.log("Initializing mock data service");
-        await dataService.initializeSampleData();
+        console.log("Initializing data services...");
+        
+        // Initialize MongoDB service first
+        const mongoService = MongoDBService.getInstance();
+        console.log("MongoDB URI:", "mongodb+srv://user1:RZmOFgVbTWOHorCK@cluster0.praei.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
+        await mongoService.connect();
+        
+        // Then initialize mock data service as fallback
+        const mockDataService = MockDataService.getInstance();
+        await mockDataService.initializeSampleData();
+        
+        console.log("Data services initialized successfully");
       } catch (error) {
-        console.error("Failed to initialize mock data:", error);
+        console.error("Failed to initialize data services:", error);
       } finally {
         // Set loading to false after a brief delay for a smoother UX
         setTimeout(() => {

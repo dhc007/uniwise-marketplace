@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProductCardProps } from "./ProductCard";
+import { toast } from "@/hooks/use-toast";
+import MockDataService from "@/services/mockDataService";
 
 interface Message {
   id: string;
@@ -24,20 +26,101 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
-const productSuggestions = [
-  "Show me drafting tools",
-  "I need a chemistry lab coat",
-  "Looking for calculus textbooks",
-  "Find electronics for sale",
-];
+// Mock Gemini API client for a browser environment
+const mockGeminiClient = {
+  async generateResponse(userMessage: string, productList: ProductCardProps[]) {
+    // Format products for better context
+    const formattedProducts = productList.map(product => 
+      `📌 *${product.title}* (Category: ${product.category})\n💰 Price: ₹${product.price}\n🔹 Condition: ${product.condition}`
+    ).join("\n\n");
+    
+    // In a real implementation, this would make an API call to a Gemini backend
+    // For demonstration, we'll simulate the response based on the user message
+    console.log("Gemini API key: AIzaSyDt4yLRKnENFE2wbWUA_5CSHpZ8_w7KUlU");
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const lowerCaseMessage = userMessage.toLowerCase();
+    
+    // Check if user is asking about specific product categories
+    if (lowerCaseMessage.includes("textbook") || lowerCaseMessage.includes("book")) {
+      const books = productList.filter(p => p.category === "Textbooks" || p.category === "Books");
+      if (books.length > 0) {
+        return `I found ${books.length} textbooks available on UniMart:\n\n${
+          books.slice(0, 3).map(b => `📚 *${b.title}* - ₹${b.price} (${b.condition})`).join("\n")
+        }${books.length > 3 ? `\n\n...and ${books.length - 3} more` : ""}`;
+      }
+    }
+    
+    if (lowerCaseMessage.includes("lab coat") || lowerCaseMessage.includes("chemistry")) {
+      const labCoats = productList.filter(p => 
+        p.title.toLowerCase().includes("lab coat") || 
+        p.category === "Lab Equipment" || 
+        p.subject === "Chemistry"
+      );
+      if (labCoats.length > 0) {
+        return `I found ${labCoats.length} lab equipment items:\n\n${
+          labCoats.slice(0, 3).map(l => `🧪 *${l.title}* - ₹${l.price} (${l.condition})`).join("\n")
+        }`;
+      }
+    }
+    
+    if (lowerCaseMessage.includes("drafting") || lowerCaseMessage.includes("engineering graphics")) {
+      const draftingTools = productList.filter(p => 
+        p.category === "Drafting Tools" || 
+        p.subject === "Engineering Graphics"
+      );
+      if (draftingTools.length > 0) {
+        return `I found ${draftingTools.length} drafting tools and related items:\n\n${
+          draftingTools.slice(0, 3).map(d => `📐 *${d.title}* - ₹${d.price} (${d.condition})`).join("\n")
+        }`;
+      }
+    }
+    
+    // Help with selling items
+    if (lowerCaseMessage.includes("sell") || lowerCaseMessage.includes("selling")) {
+      return "To sell items on UniMart:\n\n1. Sign in with your college email\n2. Click on the 'Sell' button in the navigation\n3. Fill out the product details form\n4. Upload clear images of your item\n5. Set a fair price\n6. Submit your listing\n\nYour item will be verified on our blockchain network to build trust with buyers!";
+    }
+    
+    // About blockchain
+    if (lowerCaseMessage.includes("blockchain") || lowerCaseMessage.includes("verify")) {
+      return "UniMart uses blockchain technology to create trust between student buyers and sellers. When an item is verified on the blockchain, it means:\n\n1. The item details are permanently recorded\n2. The seller identity is confirmed\n3. The transaction history is transparent\n\nYou can see blockchain status by clicking the blockchain icon in the navigation bar!";
+    }
+    
+    // Generic search
+    if (lowerCaseMessage.includes("find") || lowerCaseMessage.includes("search") || lowerCaseMessage.includes("looking for")) {
+      return "You can search for products using the search bar in the navigation. Or tell me what specific item or category you're looking for, and I can help find options available on UniMart.";
+    }
+    
+    // Default response
+    return "I'm here to help you find what you need on UniMart! You can ask me about specific products, how to sell items, or how our blockchain verification works. What would you like to know?";
+  }
+};
 
 const AIChat = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [products, setProducts] = useState<ProductCardProps[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load products for AI context
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const dataService = MockDataService.getInstance();
+        const productList = await dataService.getProducts();
+        setProducts(productList);
+      } catch (error) {
+        console.error("Error loading products for AI:", error);
+      }
+    };
+    
+    loadProducts();
+  }, []);
 
   // Focus input when chat opens
   useEffect(() => {
@@ -56,7 +139,7 @@ const AIChat = () => {
     }
   }, [messages]);
 
-  const handleSendMessage = (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputValue.trim()) return;
 
@@ -71,90 +154,47 @@ const AIChat = () => {
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI response after delay
-    setTimeout(() => {
-      const products = loadProductsFromLocalStorage();
-      const botResponse = generateResponse(inputValue, products);
+    try {
+      // Generate AI response using the mock Gemini client
+      const aiResponse = await mockGeminiClient.generateResponse(inputValue, products);
+      
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: botResponse,
+          text: aiResponse,
           sender: "bot",
           timestamp: new Date(),
         },
       ]);
-      setIsTyping(false);
-    }, 1000);
-  };
-
-  const loadProductsFromLocalStorage = (): ProductCardProps[] => {
-    try {
-      const storedProducts = localStorage.getItem("unimart_products");
-      if (storedProducts) {
-        return JSON.parse(storedProducts);
-      }
     } catch (error) {
-      console.error("Error loading products:", error);
-    }
-    return [];
-  }
-
-  const generateResponse = (input: string, products: ProductCardProps[]): string => {
-    const normalizedInput = input.toLowerCase();
-    
-    // Search for products
-    if (normalizedInput.includes("search") || normalizedInput.includes("find") || normalizedInput.includes("show")) {
-      const searchTerms = normalizedInput.split(/\s+/).filter(term => 
-        term.length > 3 && 
-        !["search", "find", "show", "looking", "need", "want", "for", "about", "the", "and"].includes(term)
-      );
+      console.error("Error generating AI response:", error);
+      toast({
+        title: "AI Response Error",
+        description: "Sorry, I couldn't generate a response. Please try again.",
+        variant: "destructive",
+      });
       
-      if (searchTerms.length > 0) {
-        const matchedProducts = products.filter(product => {
-          return searchTerms.some(term => 
-            product.title.toLowerCase().includes(term) || 
-            product.description.toLowerCase().includes(term) || 
-            product.category.toLowerCase().includes(term) ||
-            (product.subject && product.subject.toLowerCase().includes(term))
-          );
-        });
-        
-        if (matchedProducts.length > 0) {
-          const productList = matchedProducts.slice(0, 3).map(p => 
-            `- ${p.title} (₹${p.price}) - ${p.condition}`
-          ).join('\n');
-          
-          return `I found ${matchedProducts.length} products that match your search. Here are a few:\n\n${productList}\n\nYou can view all results by visiting the Products page.`;
-        } else {
-          return "I couldn't find any products matching your search. Try browsing the Products page or using different keywords.";
-        }
-      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: "Sorry, I'm having trouble connecting to my knowledge base. Please try again in a moment.",
+          sender: "bot",
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsTyping(false);
     }
-    
-    // How to sell items
-    if (normalizedInput.includes("sell") || normalizedInput.includes("selling") || normalizedInput.includes("list")) {
-      return "To sell an item on UniMart:\n\n1. Make sure you're logged in with your @pccegoa.edu.in email\n2. Click on 'Sell' in the navigation menu\n3. Fill out the product details form\n4. Upload clear photos\n5. Set your price\n6. Submit the listing\n\nYour item will be verified on our blockchain and made available to buyers!";
-    }
-    
-    // Authentication help
-    if (normalizedInput.includes("login") || normalizedInput.includes("signup") || normalizedInput.includes("sign up") || normalizedInput.includes("register") || normalizedInput.includes("account")) {
-      return "To use UniMart, you need to have a valid @pccegoa.edu.in email address. Visit the login page to sign in or create a new account. This helps ensure that our marketplace is exclusively for students at our college.";
-    }
-    
-    // Blockchain information
-    if (normalizedInput.includes("blockchain") || normalizedInput.includes("verified") || normalizedInput.includes("verification")) {
-      return "UniMart uses blockchain technology to verify the authenticity of listings and transactions. Products with a 'Verified' badge have been recorded on our blockchain, creating a transparent and secure record of ownership. This helps build trust between buyers and sellers in our community.";
-    }
-    
-    // General inquiry about subjects
-    if (normalizedInput.includes("subject") || normalizedInput.includes("course") || normalizedInput.includes("study")) {
-      return "UniMart organizes products by subjects like Engineering Graphics, Chemistry, Physics, Mathematics, Workshop, Computer Science, and more. You can filter products by subject on our Products page to find exactly what you need for your courses.";
-    }
-    
-    // Default response
-    return "I'm here to help you find products, learn how to sell items, or answer questions about UniMart. You can ask me about specific products, subjects, or how our blockchain verification works.";
   };
+
+  const productSuggestions = [
+    "Show me drafting tools",
+    "I need a chemistry lab coat",
+    "Looking for calculus textbooks",
+    "How does blockchain work?",
+  ];
 
   const handleSuggestionClick = (suggestion: string) => {
     setInputValue(suggestion);
