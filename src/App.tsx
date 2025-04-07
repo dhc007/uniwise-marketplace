@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { toast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -22,25 +21,25 @@ const queryClient = new QueryClient();
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize MongoDB connection
+  // Initialize mock MongoDB service
   useEffect(() => {
-    const initMongoDB = async () => {
+    const initMockData = async () => {
       try {
+        // Get MongoDB service instance and initialize it
         const mongoService = MongoDBService.getInstance();
+        console.log("Initializing mock MongoDB service");
         await mongoService.connect();
-        // Don't wait for database connection to show the UI
-        console.log("MongoDB connection attempt complete");
       } catch (error) {
-        console.error("Failed to initialize MongoDB:", error);
+        console.error("Failed to initialize mock data:", error);
       } finally {
-        // Always set loading to false after a short delay
+        // Set loading to false after a brief delay for a smoother UX
         setTimeout(() => {
           setIsLoading(false);
         }, 500);
       }
     };
 
-    initMongoDB();
+    initMockData();
   }, []);
 
   // Show a simple loading indicator while initializing
