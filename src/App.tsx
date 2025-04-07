@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -15,25 +15,19 @@ import About from "./pages/About";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
 import MockDataService from "./services/mockDataService";
-import MongoDBService from "./services/mongodb";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize data services
+  // Initialize data service
   useEffect(() => {
     const initializeData = async () => {
       try {
         console.log("Initializing data services...");
         
-        // Initialize MongoDB service first
-        const mongoService = MongoDBService.getInstance();
-        console.log("MongoDB URI:", "mongodb+srv://user1:RZmOFgVbTWOHorCK@cluster0.praei.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
-        await mongoService.connect();
-        
-        // Then initialize mock data service as fallback
+        // Initialize mock data service
         const mockDataService = MockDataService.getInstance();
         await mockDataService.initializeSampleData();
         

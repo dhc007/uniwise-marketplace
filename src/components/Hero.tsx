@@ -67,7 +67,7 @@ const Hero = () => {
     <div className="relative overflow-hidden">
       {/* Background gradient */}
       <div 
-        className="absolute inset-0 hero-gradient opacity-10"
+        className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-70"
         style={{ transform: `translateY(${scrollY * 0.2}px)` }} 
       />
       
@@ -76,7 +76,7 @@ const Hero = () => {
           {/* Left column (text) */}
           <div className="flex flex-col max-w-2xl">
             <motion.div
-              className="inline-flex items-center px-3 py-1 rounded-full bg-unimart-50 border border-unimart-100 text-unimart-800 text-sm font-medium mb-6"
+              className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-800 text-sm font-medium mb-6"
               custom={0}
               initial="hidden"
               animate="visible"
@@ -94,7 +94,7 @@ const Hero = () => {
               variants={fadeVariants}
             >
               Your University <br/>
-              <span className="bg-gradient-to-r from-unimart-700 to-unimart-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-700 to-indigo-500 bg-clip-text text-transparent">
                 Marketplace
               </span>
             </motion.h1>
@@ -130,7 +130,7 @@ const Hero = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  className="h-12 px-6 rounded-l-none bg-unimart-600 hover:bg-unimart-700"
+                  className="h-12 px-6 rounded-l-none bg-blue-600 hover:bg-blue-700"
                 >
                   Search
                 </Button>
@@ -149,7 +149,7 @@ const Hero = () => {
                 <Button
                   key={category.name}
                   variant="outline"
-                  className="justify-start border-gray-200 hover:border-unimart-300 hover:bg-unimart-50"
+                  className="justify-start border-gray-200 hover:border-blue-300 hover:bg-blue-50"
                   onClick={() => navigate(`/products?category=${category.name}`)}
                 >
                   <div className={`mr-2 p-1 rounded-md ${category.color}`}>
@@ -161,7 +161,7 @@ const Hero = () => {
             </motion.div>
           </div>
 
-          {/* Right column (real product showcase) */}
+          {/* Right column (product showcase) */}
           <motion.div 
             className="relative hidden lg:block"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -171,7 +171,7 @@ const Hero = () => {
             <div className="relative rounded-xl overflow-hidden bg-white shadow-2xl border border-gray-100">
               <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex items-center justify-center">
                 <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
-                  {/* Real product cards */}
+                  {/* Product cards */}
                   {featuredProducts.map((product, index) => (
                     <motion.div 
                       key={product.id}
@@ -201,7 +201,7 @@ const Hero = () => {
 
             {/* Floating elements */}
             <motion.div 
-              className="absolute -top-6 -left-6 p-4 glass-card rounded-lg w-40"
+              className="absolute -top-6 -left-6 p-4 bg-white/80 backdrop-blur-sm shadow-lg rounded-lg w-40"
               animate={{ 
                 y: [0, -10, 0],
                 rotate: [0, 5, 0]
@@ -212,14 +212,14 @@ const Hero = () => {
                 repeatType: "mirror"
               }}
             >
-              <div className="text-xs font-semibold text-unimart-600 mb-1">Verified on Blockchain</div>
+              <div className="text-xs font-semibold text-blue-600 mb-1">Verified on Blockchain</div>
               <div className="h-2 w-full bg-green-200 rounded-full relative">
                 <div className="h-2 w-3/4 bg-green-500 rounded-full absolute left-0 top-0"></div>
               </div>
             </motion.div>
 
             <motion.div 
-              className="absolute -bottom-4 -right-4 p-3 glass-card rounded-lg"
+              className="absolute -bottom-4 -right-4 p-3 bg-white/80 backdrop-blur-sm shadow-lg rounded-lg"
               animate={{ 
                 y: [0, 10, 0],
                 rotate: [0, -3, 0]
@@ -232,10 +232,10 @@ const Hero = () => {
               }}
             >
               <div className="flex items-center space-x-2">
-                <div className="h-6 w-6 rounded-full bg-unimart-100 flex items-center justify-center text-xs font-bold text-unimart-700">U</div>
+                <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700">U</div>
                 <div>
-                  <div className="h-2 w-16 bg-unimart-200 rounded-full mb-1"></div>
-                  <div className="h-2 w-10 bg-unimart-300 rounded-full"></div>
+                  <div className="h-2 w-16 bg-blue-200 rounded-full mb-1"></div>
+                  <div className="h-2 w-10 bg-blue-300 rounded-full"></div>
                 </div>
               </div>
             </motion.div>

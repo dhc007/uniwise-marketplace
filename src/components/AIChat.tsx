@@ -1,365 +1,252 @@
 
 import { useState, useRef, useEffect } from "react";
+import { Bot, X, SendHorizontal, Maximize, Minimize } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, Send, ChevronUp, Search, ShoppingBag, User, Book } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ProductCardProps } from "./ProductCard";
-import { toast } from "@/hooks/use-toast";
 import MockDataService from "@/services/mockDataService";
-
-interface Message {
-  id: string;
-  text: string;
-  sender: "user" | "bot";
-  timestamp: Date;
-}
-
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: "welcome",
-    text: "Hello! I'm UniBot, your personal assistant for UniMart. Ask me anything about our products, how to sell items, or help finding what you need!",
-    sender: "bot",
-    timestamp: new Date(),
-  },
-];
-
-// Mock Gemini API client for a browser environment
-const mockGeminiClient = {
-  async generateResponse(userMessage: string, productList: ProductCardProps[]) {
-    // Format products for better context
-    const formattedProducts = productList.map(product => 
-      `📌 *${product.title}* (Category: ${product.category})\n💰 Price: ₹${product.price}\n🔹 Condition: ${product.condition}`
-    ).join("\n\n");
-    
-    // In a real implementation, this would make an API call to a Gemini backend
-    // For demonstration, we'll simulate the response based on the user message
-    console.log("Gemini API key: AIzaSyDt4yLRKnENFE2wbWUA_5CSHpZ8_w7KUlU");
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const lowerCaseMessage = userMessage.toLowerCase();
-    
-    // Check if user is asking about specific product categories
-    if (lowerCaseMessage.includes("textbook") || lowerCaseMessage.includes("book")) {
-      const books = productList.filter(p => p.category === "Textbooks" || p.category === "Books");
-      if (books.length > 0) {
-        return `I found ${books.length} textbooks available on UniMart:\n\n${
-          books.slice(0, 3).map(b => `📚 *${b.title}* - ₹${b.price} (${b.condition})`).join("\n")
-        }${books.length > 3 ? `\n\n...and ${books.length - 3} more` : ""}`;
-      }
-    }
-    
-    if (lowerCaseMessage.includes("lab coat") || lowerCaseMessage.includes("chemistry")) {
-      const labCoats = productList.filter(p => 
-        p.title.toLowerCase().includes("lab coat") || 
-        p.category === "Lab Equipment" || 
-        p.subject === "Chemistry"
-      );
-      if (labCoats.length > 0) {
-        return `I found ${labCoats.length} lab equipment items:\n\n${
-          labCoats.slice(0, 3).map(l => `🧪 *${l.title}* - ₹${l.price} (${l.condition})`).join("\n")
-        }`;
-      }
-    }
-    
-    if (lowerCaseMessage.includes("drafting") || lowerCaseMessage.includes("engineering graphics")) {
-      const draftingTools = productList.filter(p => 
-        p.category === "Drafting Tools" || 
-        p.subject === "Engineering Graphics"
-      );
-      if (draftingTools.length > 0) {
-        return `I found ${draftingTools.length} drafting tools and related items:\n\n${
-          draftingTools.slice(0, 3).map(d => `📐 *${d.title}* - ₹${d.price} (${d.condition})`).join("\n")
-        }`;
-      }
-    }
-    
-    // Help with selling items
-    if (lowerCaseMessage.includes("sell") || lowerCaseMessage.includes("selling")) {
-      return "To sell items on UniMart:\n\n1. Sign in with your college email\n2. Click on the 'Sell' button in the navigation\n3. Fill out the product details form\n4. Upload clear images of your item\n5. Set a fair price\n6. Submit your listing\n\nYour item will be verified on our blockchain network to build trust with buyers!";
-    }
-    
-    // About blockchain
-    if (lowerCaseMessage.includes("blockchain") || lowerCaseMessage.includes("verify")) {
-      return "UniMart uses blockchain technology to create trust between student buyers and sellers. When an item is verified on the blockchain, it means:\n\n1. The item details are permanently recorded\n2. The seller identity is confirmed\n3. The transaction history is transparent\n\nYou can see blockchain status by clicking the blockchain icon in the navigation bar!";
-    }
-    
-    // Generic search
-    if (lowerCaseMessage.includes("find") || lowerCaseMessage.includes("search") || lowerCaseMessage.includes("looking for")) {
-      return "You can search for products using the search bar in the navigation. Or tell me what specific item or category you're looking for, and I can help find options available on UniMart.";
-    }
-    
-    // Default response
-    return "I'm here to help you find what you need on UniMart! You can ask me about specific products, how to sell items, or how our blockchain verification works. What would you like to know?";
-  }
-};
 
 const AIChat = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [inputValue, setInputValue] = useState("");
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([
+    { role: "bot", content: "Hello! I'm UniBot, your UniMart assistant. How can I help you today?" },
+  ]);
   const [isTyping, setIsTyping] = useState(false);
-  const [products, setProducts] = useState<ProductCardProps[]>([]);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef(null);
+  const [products, setProducts] = useState([]);
 
-  // Load products for AI context
   useEffect(() => {
     const loadProducts = async () => {
-      try {
-        const dataService = MockDataService.getInstance();
-        const productList = await dataService.getProducts();
-        setProducts(productList);
-      } catch (error) {
-        console.error("Error loading products for AI:", error);
-      }
+      const dataService = MockDataService.getInstance();
+      const products = await dataService.getProducts();
+      setProducts(products);
     };
     
     loadProducts();
   }, []);
 
-  // Focus input when chat opens
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isOpen]);
-
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!inputValue.trim()) return;
+  const formatProductDetails = (product) => {
+    return `📌 *${product.title}* (Category: ${product.category})
+💰 Price: ₹${product.price}
+🔹 Condition: ${product.condition}
+🔹 Seller: ${product.seller}
+🔹 Subject: ${product.subject}`;
+  };
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: "user",
-      timestamp: new Date(),
-    };
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!message.trim()) return;
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
+    // Add user message
+    setMessages((prev) => [...prev, { role: "user", content: message }]);
+    const userMessage = message;
+    setMessage("");
     setIsTyping(true);
 
+    // Search for product matches in the message
+    const lowercaseMessage = userMessage.toLowerCase();
+    const matchedProducts = products.filter(product =>
+      product.title.toLowerCase().includes(lowercaseMessage) ||
+      product.category.toLowerCase().includes(lowercaseMessage) ||
+      product.subject.toLowerCase().includes(lowercaseMessage)
+    );
+
     try {
-      // Generate AI response using the mock Gemini client
-      const aiResponse = await mockGeminiClient.generateResponse(inputValue, products);
-      
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          text: aiResponse,
-          sender: "bot",
-          timestamp: new Date(),
-        },
-      ]);
+      // Simulate API call with delay
+      setTimeout(() => {
+        let response;
+        
+        if (matchedProducts.length > 0) {
+          // Return product info if we found matches
+          response = `I found ${matchedProducts.length} matching items:\n\n${
+            matchedProducts.slice(0, 3).map(formatProductDetails).join("\n\n")
+          }${matchedProducts.length > 3 ? "\n\n...and more" : ""}`;
+        } else if (lowercaseMessage.includes("hello") || lowercaseMessage.includes("hi")) {
+          response = "Hello! How can I help you today?";
+        } else if (lowercaseMessage.includes("textbook") || lowercaseMessage.includes("book")) {
+          response = "We have several textbooks available. Are you looking for any specific subject?";
+        } else if (lowercaseMessage.includes("lab") || lowercaseMessage.includes("equipment")) {
+          response = "We have lab coats, safety goggles, and other lab equipment available. What specifically are you looking for?";
+        } else if (lowercaseMessage.includes("sell")) {
+          response = "You can sell your items by going to the 'Sell' page from the navigation menu!";
+        } else if (lowercaseMessage.includes("price") || lowercaseMessage.includes("cost")) {
+          response = "Prices vary depending on the item. Is there a specific product you're interested in?";
+        } else if (lowercaseMessage.includes("blockchain")) {
+          response = "Our blockchain verification ensures authentic listings from real students. Look for the verified badge!";
+        } else {
+          response = "I'm not sure I understand. Could you try rephrasing or ask about specific products, categories, or subjects?";
+        }
+        
+        setMessages((prev) => [...prev, { role: "bot", content: response }]);
+        setIsTyping(false);
+        
+        // Show toast notification for new message
+        toast({
+          title: "New message from UniBot",
+          description: response.substring(0, 60) + (response.length > 60 ? "..." : ""),
+          variant: "default",
+        });
+      }, 1500);
     } catch (error) {
-      console.error("Error generating AI response:", error);
-      toast({
-        title: "AI Response Error",
-        description: "Sorry, I couldn't generate a response. Please try again.",
-        variant: "destructive",
-      });
-      
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          text: "Sorry, I'm having trouble connecting to my knowledge base. Please try again in a moment.",
-          sender: "bot",
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
+      console.error("Error getting AI response:", error);
+      setMessages((prev) => [...prev, { 
+        role: "bot", 
+        content: "Sorry, I'm having trouble processing your request right now. Please try again later." 
+      }]);
       setIsTyping(false);
     }
   };
 
-  const productSuggestions = [
-    "Show me drafting tools",
-    "I need a chemistry lab coat",
-    "Looking for calculus textbooks",
-    "How does blockchain work?",
-  ];
+  const toggleChat = () => {
+    setIsOpen(!isOpen);
+    setIsMinimized(false);
+  };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
-    handleSendMessage();
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
   };
 
   return (
     <>
+      {/* Chat button */}
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="fixed bottom-20 right-5 w-80 sm:w-96 h-[500px] sm:h-[600px] bg-white rounded-xl shadow-2xl z-40 flex flex-col border border-gray-100 overflow-hidden"
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        {!isOpen && (
+          <motion.button
+            className="fixed bottom-6 right-6 p-4 rounded-full bg-blue-600 text-white shadow-lg z-20 flex items-center justify-center"
+            onClick={toggleChat}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
-            {/* Chat header */}
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-unimart-600 to-unimart-800 text-white">
-              <div className="flex items-center">
-                <Avatar className="h-8 w-8 mr-2 bg-white/20">
-                  <AvatarFallback className="text-white text-sm">UB</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-medium">UniBot</h3>
-                  <p className="text-xs text-white/70">Your marketplace assistant</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
-                onClick={() => setIsOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Chat messages */}
-            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.sender === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[80%] px-4 py-3 rounded-xl ${
-                        message.sender === "user"
-                          ? "bg-unimart-600 text-white rounded-br-none"
-                          : "bg-gray-100 text-gray-800 rounded-bl-none"
-                      }`}
-                    >
-                      <div className="whitespace-pre-line">{message.text}</div>
-                      <div
-                        className={`text-xs mt-1 ${
-                          message.sender === "user" ? "text-white/70" : "text-gray-500"
-                        }`}
-                      >
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] px-4 py-3 rounded-xl bg-gray-100 text-gray-800 rounded-bl-none">
-                      <div className="flex space-x-1">
-                        <motion.div
-                          className="h-2 w-2 bg-gray-400 rounded-full"
-                          animate={{ y: [0, -5, 0] }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.8,
-                            ease: "easeInOut",
-                            delay: 0,
-                          }}
-                        />
-                        <motion.div
-                          className="h-2 w-2 bg-gray-400 rounded-full"
-                          animate={{ y: [0, -5, 0] }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.8,
-                            ease: "easeInOut",
-                            delay: 0.15,
-                          }}
-                        />
-                        <motion.div
-                          className="h-2 w-2 bg-gray-400 rounded-full"
-                          animate={{ y: [0, -5, 0] }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.8,
-                            ease: "easeInOut",
-                            delay: 0.3,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-
-            {/* Suggestion chips */}
-            <div className="px-4 py-2 border-t border-gray-100 overflow-x-auto">
-              <div className="flex space-x-2">
-                {productSuggestions.map((suggestion) => (
-                  <Button
-                    key={suggestion}
-                    variant="outline"
-                    size="sm"
-                    className="whitespace-nowrap text-xs py-1 px-3 h-auto bg-gray-50 border-gray-200 hover:bg-gray-100"
-                    onClick={() => handleSuggestionClick(suggestion)}
-                  >
-                    {suggestion}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Input form */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100">
-              <div className="flex">
-                <Input
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask me anything..."
-                  className="flex-1"
-                />
-                <Button
-                  type="submit"
-                  className="ml-2 bg-unimart-600 hover:bg-unimart-700"
-                  disabled={!inputValue.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </form>
-          </motion.div>
+            <Bot size={24} />
+          </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Floating button */}
-      <motion.button
-        className={`fixed bottom-5 right-5 p-3 rounded-full shadow-lg z-40 ${
-          isOpen ? "bg-gray-200 text-gray-600" : "bg-unimart-600 text-white"
-        }`}
-        onClick={() => setIsOpen(!isOpen)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {isOpen ? (
-          <ChevronUp className="h-6 w-6" />
-        ) : (
-          <MessageSquare className="h-6 w-6" />
+      {/* Chat window */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="fixed bottom-6 right-6 w-80 md:w-96 rounded-lg shadow-xl overflow-hidden z-20 bg-white border border-gray-200"
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              scale: 1, 
+              height: isMinimized ? "auto" : "500px" 
+            }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* Header */}
+            <div className="bg-blue-600 text-white p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Bot size={20} />
+                <h3 className="font-medium">UniBot</h3>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button onClick={toggleMinimize} className="p-1 rounded hover:bg-blue-500">
+                  {isMinimized ? <Maximize size={16} /> : <Minimize size={16} />}
+                </button>
+                <button onClick={toggleChat} className="p-1 rounded hover:bg-blue-500">
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Chat content */}
+            <AnimatePresence>
+              {!isMinimized && (
+                <motion.div 
+                  className="flex flex-col h-[calc(500px-110px)]"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  {/* Messages */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {messages.map((msg, index) => (
+                      <motion.div
+                        key={index}
+                        className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div
+                          className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                            msg.role === "user"
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          <div className="whitespace-pre-line">{msg.content}</div>
+                        </div>
+                      </motion.div>
+                    ))}
+                    {isTyping && (
+                      <motion.div
+                        className="flex justify-start"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <div className="bg-gray-100 px-4 py-2 rounded-lg text-gray-800">
+                          <div className="flex space-x-1">
+                            <motion.div
+                              className="w-2 h-2 rounded-full bg-gray-400"
+                              animate={{ y: [0, -5, 0] }}
+                              transition={{ duration: 0.6, repeat: Infinity }}
+                            />
+                            <motion.div
+                              className="w-2 h-2 rounded-full bg-gray-400"
+                              animate={{ y: [0, -5, 0] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                            />
+                            <motion.div
+                              className="w-2 h-2 rounded-full bg-gray-400"
+                              animate={{ y: [0, -5, 0] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Input */}
+                  <form onSubmit={handleSend} className="p-3 border-t border-gray-200 flex">
+                    <Input
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1 mr-2"
+                      disabled={isTyping}
+                    />
+                    <Button 
+                      type="submit" 
+                      size="icon" 
+                      disabled={isTyping || !message.trim()}
+                      className={isTyping ? "bg-gray-400" : "bg-blue-600"}
+                    >
+                      <SendHorizontal size={18} />
+                    </Button>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
-      </motion.button>
+      </AnimatePresence>
     </>
   );
 };

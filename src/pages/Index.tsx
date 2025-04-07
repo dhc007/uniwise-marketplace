@@ -18,9 +18,9 @@ const Index = () => {
         const dataService = MockDataService.getInstance();
         const products = await dataService.getProducts();
         setFeaturedProducts(products.slice(0, 4)); // Get first 4 products
+        setIsLoading(false);
       } catch (error) {
         console.error("Error loading products:", error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -50,7 +50,7 @@ const Index = () => {
           
           {isLoading ? (
             <div className="py-10 text-center">
-              <div className="w-12 h-12 border-4 border-gray-300 border-t-unimart-500 rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-gray-500">Loading products...</p>
             </div>
           ) : (
@@ -63,7 +63,7 @@ const Index = () => {
           
           <div className="text-center mt-10">
             <Link to="/products">
-              <Button className="bg-unimart-600 hover:bg-unimart-700">
+              <Button className="bg-blue-600 hover:bg-blue-700">
                 View All Products
               </Button>
             </Link>

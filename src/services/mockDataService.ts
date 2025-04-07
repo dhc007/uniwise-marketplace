@@ -6,10 +6,7 @@ class MockDataService {
   private users: any[] = [];
   private initialized: boolean = false;
 
-  private constructor() {
-    // Initialize with sample data
-    this.initializeSampleData();
-  }
+  private constructor() {}
 
   public static getInstance(): MockDataService {
     if (!MockDataService.instance) {
@@ -22,7 +19,7 @@ class MockDataService {
   public async initializeSampleData(): Promise<void> {
     console.log("Initializing sample product data...");
     
-    // Sample products
+    // Sample products with better image URLs
     this.products = [
       {
         id: "1",
@@ -93,11 +90,87 @@ class MockDataService {
         rating: 4.6,
         postedDate: "1 week ago",
         isBlockchainVerified: false
+      },
+      {
+        id: "6",
+        title: "Drafter Set for Engineering Students", 
+        price: 320, 
+        description: "Professional quality drafting tools for engineering students. Includes all necessary tools for technical drawing.",
+        image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80", 
+        condition: "New", 
+        category: "Stationery", 
+        seller: "Atisha", 
+        subject: "Engineering Graphics", 
+        rating: 4.4, 
+        postedDate: "2 weeks ago", 
+        isBlockchainVerified: true,
+        rollNo: "21IT13"
+      },
+      {
+        id: "7",
+        title: "Workshop Apron for Practical Labs", 
+        price: 270, 
+        description: "Durable workshop apron for protection during practical lab sessions. Made from high-quality material.",
+        image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80", 
+        condition: "Good", 
+        category: "Apparel", 
+        seller: "Dhruv", 
+        subject: "Workshop Practice", 
+        rating: 4.1, 
+        postedDate: "3 weeks ago", 
+        isBlockchainVerified: false,
+        rollNo: "21CE09"
+      },
+      {
+        id: "8",
+        title: "Lab Coat for Chemistry and Biology Labs", 
+        price: 380, 
+        description: "Standard laboratory coat for use in chemistry and biology labs. Meets safety requirements.",
+        image: "https://images.unsplash.com/photo-1581056771107-24247a7e6794?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80", 
+        condition: "Fair", 
+        category: "Apparel", 
+        seller: "Mudra", 
+        subject: "Chemistry", 
+        rating: 3.9, 
+        postedDate: "1 month ago", 
+        isBlockchainVerified: true,
+        rollNo: "21EC07"
+      },
+      {
+        id: "9",
+        title: "Engineering Graphics Textbook", 
+        price: 350, 
+        description: "Standard textbook for Engineering Graphics course. Covers all foundational concepts.",
+        image: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80", 
+        condition: "Like New", 
+        category: "Books", 
+        seller: "Shawn", 
+        subject: "Engineering Graphics", 
+        rating: 4.7, 
+        postedDate: "4 days ago", 
+        isBlockchainVerified: true,
+        rollNo: "21ME21"
+      },
+      {
+        id: "10",
+        title: "Casio FX-991EX Scientific Calculator", 
+        price: 750, 
+        description: "Advanced scientific calculator with natural display. Perfect for engineering and science courses.",
+        image: "https://images.unsplash.com/photo-1564473185935-b0c6b9150bfe?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80", 
+        condition: "Used", 
+        category: "Stationery", 
+        seller: "Aman", 
+        subject: "Mathematics", 
+        rating: 4.8, 
+        postedDate: "1 week ago", 
+        isBlockchainVerified: false,
+        rollNo: "21IT05"
       }
     ];
     
     this.initialized = true;
     console.log("Sample product data initialized");
+    return Promise.resolve();
   }
 
   // Get all products
